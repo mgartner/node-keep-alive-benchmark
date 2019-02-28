@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>flamebearer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+    html, body { height: 100%; }
+    body { font: 16px "Helvetica Neue", sans-serif; margin: 0; }
+    body.hover { background: #cfc; }
+    h1 { font-size: 30px; margin: 30px 30px 15px; }
+    h1 a { color: black; text-decoration: none; }
+    h1 a:hover { text-decoration: underline; }
+    #fire-icon { fill: #f53; width: 26px; height: 26px; vertical-align: -1px; }
+    #intro { margin: 0 30px; }
+    code { font-size: 13px; color: #444; }
+    code span { color: #aaa; }
+    #canvas { width: 100%; }
+    #controls { display: none; }
+    #search { margin-right: 10px; }
+    #highlight { position: absolute; pointer-events: none; background: #ffffff40; }
+    .loaded #intro { display: none; }
+    .loaded #header { display: flex; align-items: center; flex-flow: row wrap; padding: 7px 10px; }
+    .loaded h1 { font-size: 22px; margin: 0 auto 0 0; flex-shrink: 0; }
+    .loaded #fire-icon { width: 20px; height: 20px; }
+    .loaded #controls { display: block; flex-shrink: 0; }
+    #tooltip { position: absolute; pointer-events: none; background: #ffffff; white-space: nowrap; box-shadow: 1px 2px 4px 0px rgba(0,0,0,0.3); border-radius: 2px; padding: 3px 5px; font: 12px Tahoma, sans-serif; display: none; }
+    #tooltip .path { color: #888; font-size: 11px; }
+    #tooltip .time { color: #4a4; }
+</style>
+</head>
+<body>
+
+<div id="header">
+    <h1><svg id="fire-icon" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 15 15" style="enable-background:new 0 0 15 15;" xml:space="preserve"><path d="M7.5,0.5L5,4.5l-1.5-2 C2.9452,3.4753,0.8036,5.7924,0.8036,8.3036C0.8036,12.002,3.8017,15,7.5,15s6.6964-2.998,6.6964-6.6964 c0-2.5112-2.1416-4.8283-2.6964-5.8036l-1.5,2L7.5,0.5z M7.5,7c0,0,2.5,2.5618,2.5,4.5c0,0.8371-0.8259,2-2.5,2S5,12.3371,5,11.5 C5,9.6283,7.5,7,7.5,7z"/></svg> <a href="https://github.com/mapbox/flamebearer">flamebearer</a></h1>
+    <div id="controls">
+        <input id="search" placeholder="Search..." />
+        <button id="reset">Reset view</button>
+    </div>
+</div>
+<div id="highlight"></div>
+<div id="tooltip"></div>
+<div id="intro"><!--  --></div>
+<canvas id="canvas" height="0"></canvas>
+
+<!--  -->
+<script>'use strict';
+
+const introEl = document.getElementById('intro');
+const searchEl = document.getElementById('search');
+const highlightEl = document.getElementById('highlight');
+const tooltipEl = document.getElementById('tooltip');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let names, levels, numTicks;
+
+names = ["(unknown)","~(anonymous) v8/statistics:1:1","(C++) v8::internal::Runtime_InterpreterDeserializeLazy","(C++) __kernelrpc_mach_vm_map_trap","(unknown)","~(anonymous) internal/per_context.js:1:1","~bootstrapInternalLoaders internal/bootstrap/loaders.js:42:35","(C++) _proc_name","~bootstrapNodeJSCore internal/bootstrap/node.js:15:30","~startup internal/bootstrap/node.js:32:19","~setupProcessObject internal/bootstrap/node.js:422:30","~NativeModule.require internal/bootstrap/loaders.js:175:34","~NativeModule.exists internal/bootstrap/loaders.js:223:33","(C++) v8::internal::Runtime_DeserializeLazy","(C++) v8::internal::Logger::CodeCreateEvent","~NativeModule.compile internal/bootstrap/loaders.js:329:44","~setupProcessFatal internal/bootstrap/node.js:610:29","~(anonymous) internal/async_hooks.js:1:1","~(anonymous) internal/errors.js:1:1","~E internal/errors.js:194:11","~makeNodeErrorWithCode internal/errors.js:155:31","(C++) v8::internal::Runtime_DefineClass","(C++) std::__1::locale::__imp::install","(builtin) ArrayForEach","~E.otherClasses.forEach internal/errors.js:205:26","(C++) v8::internal::Runtime_KeyedStoreIC_Miss","(C++) v8::internal::JSObject::MigrateToMap","(C++) _fgets","(C++) _swprintf_l","(builtin) SymbolConstructor","~setupProcessICUVersions internal/bootstrap/node.js:667:35","~setupGlobalVariables internal/bootstrap/node.js:429:32","~(anonymous) util.js:1:1","~(anonymous) internal/util/inspect.js:1:1","(builtin) FastNewObject","~NativeModule.cache internal/bootstrap/loaders.js:352:42","(builtin) KeyedStoreIC_Megamorphic","~(anonymous) buffer.js:1:1","~(anonymous) internal/buffer.js:1:1","(C++) v8::internal::Runtime_StoreIC_Miss","(C++) v8::internal::Runtime_LoadIC_Miss","~createPool buffer.js:117:20","~createUnsafeArrayBuffer buffer.js:108:33","(lib) /usr/lib/system/libsystem_platform.dylib","(builtin) LoadIC_Uninitialized","(C++) __kernelrpc_mach_vm_protect_trap","~makeSetter internal/bootstrap/node.js:445:24","~deprecate internal/util.js:49:19","(C++) std::__1::__call_once","~(anonymous) internal/process/main_thread_only.js:1:1","~(anonymous) assert.js:1:1","~(anonymous) internal/assert.js:1:1","(bytecode) ~CreateObjectLiteral","~(anonymous) fs.js:1:1","~binding internal/bootstrap/loaders.js:113:39","~internalBindingWhitelistHas internal/bootstrap/loaders.js:362:39","~(anonymous) internal/safe_globals.js:1:1","~makeSafe internal/safe_globals.js:13:18","~(anonymous) internal/url.js:1:1","(C++) v8::internal::Runtime_CreateRegExpLiteral","(C++) v8::internal::RegExpCapture::min_match","~defineIDLClass internal/url.js:847:24","(C++) ___fread","(C++) v8::internal::Map::FindFieldOwner","~setupConfig internal/process/per_thread.js:146:21","(C++) v8::internal::Runtime_CompileLazy","(C++) v8::internal::Factory::NewFixedArrayWithFiller","~setupGlobalTimeouts internal/bootstrap/node.js:478:31","~(anonymous) timers.js:1:1","~debuglog util.js:207:18","~setupGlobalConsole internal/bootstrap/node.js:488:30","~(anonymous) console.js:1:1","(bytecode) ~StaCurrentContextSlot","~getStdout internal/process/stdio.js:18:21","~createWritableStdioStream internal/process/stdio.js:158:35","~(anonymous) tty.js:1:1","~(anonymous) net.js:1:1","~protoGetter net.js:644:21","(bytecode) ~LdaGlobal","~WriteStream tty.js:75:21","(C++) v8::internal::Runtime_CreateObjectLiteral","(C++) v8::internal::JSObject::OptimizeAsPrototype","~Socket net.js:230:16","~Duplex _stream_duplex.js:47:16","~Readable _stream_readable.js:149:18","~ReadableState _stream_readable.js:70:23","(bytecode) ~ToBooleanLogicalNot","~initSocketHandle net.js:213:26","~addListener events.js:262:58","~_addListener events.js:200:22","(C++) v8::internal::JSObject::MakePrototypesFast","~getStderr internal/process/stdio.js:30:21","(C++) v8::internal::Factory::ObjectLiteralMapFromCache","~Readable.on _stream_readable.js:803:33","(C++) std::__1::ostreambuf_iterator","~setupInspector internal/bootstrap/node.js:573:26","~(anonymous) internal/modules/cjs/loader.js:1:1","~(anonymous) url.js:1:1","(C++) std::__1::locale::__imp::__imp","(builtin) ArrayFilter","~NativeModule.nonInternalExists internal/bootstrap/loaders.js:241:46","~NativeModule.isInternal internal/bootstrap/loaders.js:245:39","(C++) v8::internal::Log::MessageBuilder::AppendString","~Module._initPaths internal/modules/cjs/loader.js:789:29","~resolve path.js:1073:28","(C++) v8::internal::Runtime_KeyedLoadIC_Miss","(C++) v8::internal::StackFrame::ComputeType","~normalizeString path.js:57:25","~Module._nodeModulePaths internal/modules/cjs/loader.js:378:37","(C++) ___pthread_init","~startExecution internal/bootstrap/node.js:234:26","~executeUserCode internal/bootstrap/node.js:301:27","~Module.runMain internal/modules/cjs/loader.js:763:26","~Module._load internal/modules/cjs/loader.js:524:24","~tryModuleLoad internal/modules/cjs/loader.js:557:23","~Module.load internal/modules/cjs/loader.js:612:33","~Module._extensions..js internal/modules/cjs/loader.js:732:37","~Module._compile internal/modules/cjs/loader.js:679:37","~(anonymous) ./keep-alive-off.js:1:11","~require internal/modules/cjs/helpers.js:19:19","~Module.require internal/modules/cjs/loader.js:651:36","~Module._resolveFilename internal/modules/cjs/loader.js:569:35","~Module._findPath internal/modules/cjs/loader.js:239:28","(lib) /usr/lib/system/libsystem_pthread.dylib","~tryPackage internal/modules/cjs/loader.js:176:20","~tryFile internal/modules/cjs/loader.js:196:17","~toRealPath internal/modules/cjs/loader.js:204:20","~realpathSync fs.js:1398:22","~runInThisContext vm.js:315:26","~createScript vm.js:266:22","~Script vm.js:43:14","~(anonymous) ./node_modules/bluebird/js/release/bluebird.js:1:11","~module.exports ./node_modules/bluebird/js/release/promise.js:2:26","~(anonymous) ./node_modules/bluebird/js/release/util.js:1:11","~stat internal/modules/cjs/loader.js:86:14","(C++) v8::internal::Builtin_HandleApiCall","(C++) v8::internal::Runtime_LoadGlobalIC_Miss","~toFastProperties ./node_modules/bluebird/js/release/util.js:194:26","~tryExtensions internal/modules/cjs/loader.js:211:23","(C++) v8::internal::Log::MessageBuilder::WriteToLogFile","~(anonymous) ./node_modules/bluebird/js/release/async.js:1:11","~readFileSync fs.js:347:22","~tryStatSync fs.js:310:21","(C++) v8::internal::HeapObject::SizeFromMap","~module.exports ./node_modules/bluebird/js/release/promise_array.js:2:26","~inherits ./node_modules/bluebird/js/release/util.js:27:24","~T ./node_modules/bluebird/js/release/util.js:30:15","(C++) std::__1::basic_ostream","~closeSync fs.js:405:19","(C++) v8::base::TimeTicks::Now","~module.exports ./node_modules/bluebird/js/release/finally.js:2:26","(bytecode) ~LdaNamedProperty","(C++) ___part_load_locale","~toPathIfFileURL internal/url.js:1382:25","(builtin) KeyedLoadIC","~runInThisContext vm.js:117:19","~module.exports ./node_modules/bluebird/js/release/join.js:3:9","~generateHolderClass ./node_modules/bluebird/js/release/join.js:28:39","~promiseSetter ./node_modules/bluebird/js/release/join.js:21:33","(C++) v8::internal::Builtin_FunctionConstructor","(C++) _fscanf","(C++) v8::internal::SourcePositionTableIterator::Advance","~module.exports ./node_modules/bluebird/js/release/map.js:2:26","(C++) _getipv4sourcefilter","~Module._resolveLookupPaths internal/modules/cjs/loader.js:419:38","~dirname path.js:1264:28","~getRunInContextArgs vm.js:168:29","(bytecode) ~StaNamedProperty","~module.exports ./node_modules/bluebird/js/release/settle.js:3:13","~setBounds ./node_modules/bluebird/js/release/debuggability.js:690:19","~parseLineInfo ./node_modules/bluebird/js/release/debuggability.js:680:23","(builtin) StringPrototypeMatch","(C++) v8::internal::Runtime_RegExpExec","(C++) v8::internal::RegExpAlternative::ToNode","~(anonymous) https.js:1:1","~(anonymous) tls.js:1:1","~(anonymous) _tls_wrap.js:1:1","~(anonymous) crypto.js:1:1","~(anonymous) internal/crypto/diffiehellman.js:1:1","~legacyNativeHandle internal/crypto/util.js:33:28","~(anonymous) internal/crypto/cipher.js:1:1","~(anonymous) internal/crypto/sig.js:1:1","~internalBinding internal/bootstrap/loaders.js:141:47","(C++) std::__1::locale::__global","~(anonymous) _http_agent.js:1:1","~Agent _http_agent.js:42:15","~EventEmitter events.js:26:22","~(anonymous) _http_server.js:1:1","~(anonymous) _http_common.js:1:1","~(anonymous) internal/http.js:1:1","~(anonymous) http.js:1:1","(C++) node::inspector::","~log console.js:207:37","~write console.js:154:15","~Writable.write _stream_writable.js:273:36","~writeOrBuffer _stream_writable.js:365:23","~doWrite _stream_writable.js:405:17","~Socket._write net.js:734:35","~Socket._writeGeneric net.js:697:42","~writeGeneric internal/stream_base_commons.js:114:22","~afterWriteDispatched internal/stream_base_commons.js:120:30","(bytecode) ~CallUndefinedReceiver0","~onwrite _stream_writable.js:450:17","~nextTick internal/process/next_tick.js:105:20","~TickObject internal/process/next_tick.js:83:16","~newAsyncId internal/async_hooks.js:254:20","(C++) v8::internal::compiler::LiveRangeBuilder::LiveRangeFor","~_tickCallback internal/process/next_tick.js:41:25","~internalTickCallback internal/process/next_tick.js:50:32","~shift internal/fixed_queue.js:104:8","~isEmpty internal/fixed_queue.js:63:10","(C++) v8::internal::LoadIC::Load","~processImmediate timers.js:589:26","~Async.drainQueues ./node_modules/bluebird/js/release/async.js:16:33","~Async._drainQueues ./node_modules/bluebird/js/release/async.js:146:41","~_drainQueue ./node_modules/bluebird/js/release/async.js:129:21","~_drainQueueStep ./node_modules/bluebird/js/release/async.js:135:25","~MappingPromiseArray._asyncInit ./node_modules/bluebird/js/release/map.js:29:52","~init ./node_modules/bluebird/js/release/promise_array.js:36:45","~PromiseArray._iterate ./node_modules/bluebird/js/release/promise_array.js:81:43","~MappingPromiseArray._promiseFulfilled ./node_modules/bluebird/js/release/map.js:35:60","~tryCatcher ./node_modules/bluebird/js/release/util.js:12:20","~Bluebird.map ./keep-alive-off.js:37:24","~makeRequest ./keep-alive-off.js:13:21","~Promise ./node_modules/bluebird/js/release/promise.js:70:17","~Promise._resolveFromExecutor ./node_modules/bluebird/js/release/promise.js:477:51","~Promise._execute ./node_modules/bluebird/js/release/debuggability.js:311:38","~Bluebird ./keep-alive-off.js:14:23","~get https.js:303:13","~request https.js:267:17","(C++) __malloc_initialize","~ClientRequest _http_client.js:64:23","(C++) v8::internal::StackFrameIteratorBase::SingletonFor","~setHeader _http_outgoing.js:468:57","~validateHeaderName _http_outgoing.js:446:28","~checkIsHttpToken _http_common.js:213:26","(builtin) RegExpPrototypeTest","(C++) v8::internal::RelocInfoWriter::Write","~addRequest _http_agent.js:138:49","~createSocket _http_agent.js:196:53","~getName https.js:155:43","~createConnection https.js:90:26","~connect _tls_wrap.js:1189:35","~TLSSocket _tls_wrap.js:291:19","~getNewAsyncId net.js:123:23","(C++) v8::internal::JSObject::MigrateSlowToFast","~Socket.connect net.js:866:36","~lookupAndConnect net.js:922:26","~isIP internal/net.js:33:14","~isIPv6 internal/net.js:29:16","(C++) v8::internal::ChoiceNode::EatsAtLeastHelper","~(anonymous) dns.js:1:1","~bindDefaultResolver internal/dns/utils.js:128:29","~resolverKeys.forEach internal/dns/utils.js:129:24","(C++) v8::internal::StubFrame::GetCallerStackPointer","~urlToOptions internal/url.js:1257:22","(builtin) CEntry_Return1_DontSaveFPRegs_ArgvOnStack_NoBuiltinExit","~get internal/url.js:477:8","(C++) _fscanf_l","~OutgoingMessage _http_outgoing.js:68:25","~_extend util.js:321:17","(builtin) KeyedLoadIC_Megamorphic","~createSecureContext _tls_common.js:92:59","(builtin) GetProperty","(C++) v8::internal::FeedbackNexus::ConfigureMonomorphic","~end _http_outgoing.js:674:45","~SecureContext _tls_common.js:52:23","(C++) std::__1::__next_prime","~defaultTriggerAsyncIdScope internal/async_hooks.js:284:36","~(anonymous) net.js:981:61","~lookup dns.js:87:16","~URL internal/url.js:311:14","(C++) node::url::Parse","~onParseComplete internal/url.js:221:25","~URLSearchParams internal/url.js:124:14","(bytecode) ~Ldar","~oncreate _http_agent.js:212:20","~installListeners _http_agent.js:255:26","(builtin) InterpreterEntryTrampoline","~Promise.then ./node_modules/bluebird/js/release/promise.js:114:35","~Promise._then ./node_modules/bluebird/js/release/promise.js:219:36","~Promise._addCallbacks ./node_modules/bluebird/js/release/promise.js:381:44","(builtin) FastNewClosure","(C++) _putchar","(bytecode) ~CallProperty.Wide","(bytecode) ~CreateFunctionContext","~onSocketNT _http_client.js:691:20","~tickOnSocket _http_client.js:631:22","~emit events.js:147:44","~onceWrapper events.js:273:21","~removeListener events.js:306:28","~onSocket _http_client.js:720:20","~callSocketMethod _http_client.js:712:28","~ClientRequest._deferToConnect _http_client.js:280:36","~_flush _http_outgoing.js:763:51","~_flushOutput _http_outgoing.js:781:63","~onlookup dns.js:55:18","~emitLookup net.js:982:46","~internalConnect net.js:804:25","~methodProxy _tls_wrap.js:358:30","(builtin) KeyedStoreIC","~afterConnect net.js:1051:22","(builtin) CallFunction_ReceiverIsAny","~connect net.js:704:42","~once net.js:538:26","~Socket._read net.js:533:34","(C++) _tiny_malloc_should_clear","~Readable.removeListener _stream_readable.js:833:45","(bytecode) ~JumpIfUndefined","(bytecode) ~CallProperty0","~createWriteWrap internal/stream_base_commons.js:78:25","~TLSSocket._finishInit _tls_wrap.js:620:43","~onConnectSecure _tls_wrap.js:1125:25","~TLSSocket.getPeerCertificate _tls_wrap.js:662:50","~translatePeerCertificate _tls_common.js:241:69","~checkServerIdentity tls.js:173:59","~splitHost tls.js:102:19","(C++) v8::internal::SpaceWithLinearArea::StartNextInlineAllocationStep","~onWriteComplete internal/stream_base_commons.js:56:25","~socketMethodProxy _tls_wrap.js:683:36","(C++) v8::internal::MaybeHandle","~tls.connect https.js:119:39","(stub) JSEntryStub","~parseCertString internal/tls.js:5:25","~onStreamRead internal/stream_base_commons.js:134:22","~Readable.push _stream_readable.js:207:35","~readableAddChunk _stream_readable.js:232:26","~addChunk _stream_readable.js:285:18","~socketOnData _http_client.js:442:22","(C++) node::","~parserOnBody _http_common.js:116:22","~slice buffer.js:1002:40","(C++) std::__1::__hash_iterator","~endReadableNT _stream_readable.js:1100:23","~resp.on ./keep-alive-off.js:22:22","~(anonymous) ./node_modules/bluebird/js/release/promise.js:483:45","~Promise._resolveCallback ./node_modules/bluebird/js/release/promise.js:427:46","~Promise._fulfill ./node_modules/bluebird/js/release/promise.js:625:39","~AsyncSettlePromises ./node_modules/bluebird/js/release/async.js:86:29","~Async._queueTick ./node_modules/bluebird/js/release/async.js:153:39","~Promise._settlePromises ./node_modules/bluebird/js/release/promise.js:683:46","~Promise._settlePromise0 ./node_modules/bluebird/js/release/promise.js:609:45","~Promise._settlePromise ./node_modules/bluebird/js/release/promise.js:542:44","~MappingPromiseArray._drainQueue ./node_modules/bluebird/js/release/map.js:108:54","~_implicitHeader _http_client.js:291:67","~_storeHeader _http_outgoing.js:285:22","(bytecode) ~ForInEnumerate","~parserOnHeadersComplete _http_common.js:68:33","~IncomingMessage _http_incoming.js:38:25","(C++) int v8::internal::BinarySearch","~parserOnMessageComplete _http_common.js:132:33","~readStart _http_incoming.js:27:19","~TLSSocket._init _tls_wrap.js:471:37","~TLSSocket._wrapHandle _tls_wrap.js:400:43","(builtin) StoreIC","~done _tls_wrap.js:377:16","~_handle.close net.js:611:24","~onClose _http_agent.js:262:19","~removeSocket _http_agent.js:284:53","~socketCloseListener _http_client.js:336:29","~responseOnEnd _http_client.js:607:23","~responseKeepAlive _http_client.js:577:27","(bytecode) ~LdaUndefined","~get internal/url.js:597:8","~join native array.js:295:46","(builtin) Call_ReceiverIsNullOrUndefined","~resume_ _stream_readable.js:908:17","~calculateServerName _http_agent.js:232:29","(builtin) StringPrototypeSplit","(C++) v8::internal::Runtime_StringSplit","~afterShutdown net.js:374:23","~stream._final _stream_writable.js:617:17","~finishMaybe _stream_writable.js:640:21","~destroy internal/streams/destroy.js:4:17","~Socket._destroy net.js:591:37","~close _tls_wrap.js:368:50","(builtin) CompileLazy","~flow _stream_readable.js:932:14","~Readable.read _stream_readable.js:377:35","~resp.on ./keep-alive-off.js:18:23","~toString buffer.js:636:46","~Queue.shift ./node_modules/bluebird/js/release/queue.js:44:34","(bytecode) ~StaKeyedProperty","~handleSocketCreation_Inner _http_agent.js:343:45","~setRequestSocket _http_agent.js:355:26","~onSocket _http_client.js:687:53","(bytecode) ~LdaSmi","~handleWriteReq internal/stream_base_commons.js:21:24","~TLSSocket._start _tls_wrap.js:630:38","(C++) node::TLSWrap::Start","~initSearchParams internal/url.js:697:26","~Readable.resume _stream_readable.js:887:37","(bytecode) ~Dec","~Socket.destroySoon net.js:580:40","~Socket.end net.js:550:32","~defineHandleReading _tls_wrap.js:440:29","(C++) v8::internal::Builtin_ObjectDefineProperty","(C++) v8::internal::Factory::NewStruct","~chunkInvalid _stream_readable.js:303:22","~isUint8Array internal/util/types.js:28:22","(bytecode) ~TestEqualStrict","(C++) v8::internal::","~get _stream_duplex.js:119:6","~parserOnIncomingClient _http_client.js:510:32","~Stream internal/streams/legacy.js:6:16","~EventEmitter.init events.js:74:29","(C++) _mach_msg_overwrite_trap","~TLSSocket.setSession _tls_wrap.js:656:42","(builtin) Call_ReceiverIsAny","~$getMaxListeners events.js:96:26","(bytecode) ~TestGreaterThanOrEqual","~onwriteStateUpdate _stream_writable.js:443:28","~Https.get ./keep-alive-off.js:15:23","~listenerCount events.js:446:23","(bytecode) ~JumpLoop","(bytecode) ~CallProperty","(bytecode) ~ToNumeric","~callFinal _stream_writable.js:616:19","~Socket._final net.js:351:35","~TLSSocket.setServername _tls_wrap.js:646:45","(bytecode) ~LdaImmutableCurrentContextSlot","(builtin) DeleteProperty","~Promise._settlePromiseFromHandler ./node_modules/bluebird/js/release/promise.js:496:56","~Queue._pushOne ./node_modules/bluebird/js/release/queue.js:19:37","(bytecode) ~Return","~get internal/url.js:560:8","(bytecode) ~JumpIfToBooleanTrue","(regexp) ^((?:(?:[0-9a-fA-F]{1,4}):){7}(?:(?:[0-9a-fA-F]{1,4})|:)|(?:(?:[0-9a-fA-F]{1,4}):){6}(?:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|:(?:[0-9a-fA-F]{1,4})|:)|(?:(?:[0-9a-fA-F]{1,4}):){5}(?::((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(:(?:[0-9a-fA-F]{1,4})){1,2}|:)|(?:(?:[0-9a-fA-F]{1,4}):){4}(?:(:(?:[0-9a-fA-F]{1,4})){0,1}:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(:(?:[0-9a-fA-F]{1,4})){1,3}|:)|(?:(?:[0-9a-fA-F]{1,4}):){3}(?:(:(?:[0-9a-fA-F]{1,4})){0,2}:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(:(?:[0-9a-fA-F]{1,4})){1,4}|:)|(?:(?:[0-9a-fA-F]{1,4}):){2}(?:(:(?:[0-9a-fA-F]{1,4})){0,3}:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(:(?:[0-9a-fA-F]{1,4})){1,5}|:)|(?:(?:[0-9a-fA-F]{1,4}):){1}(?:(:(?:[0-9a-fA-F]{1,4})){0,4}:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(:(?:[0-9a-fA-F]{1,4})){1,6}|:)|(?::((?::(?:[0-9a-fA-F]{1,4})){0,5}:((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?::(?:[0-9a-fA-F]{1,4})){1,7}|:)))(%[0-9a-zA-Z]{1,})?$","~schedule ./node_modules/bluebird/js/release/schedule.js:12:27","~setImmediate timers.js:696:22","~Immediate timers.js:654:14","~ref timers.js:673:6","~emitBeforeScript internal/async_hooks.js:340:26","~validateAsyncId internal/async_hooks.js:117:25","(builtin) NumberIsSafeInteger","~arrayClone events.js:466:20","(builtin) ArrayConstructorImpl","(C++) v8::internal::PerIsolateAssertScope","~initAsyncResource internal/timers.js:46:27","~getDefaultTriggerAsyncId internal/async_hooks.js:270:34","(builtin) ArgumentsAdaptorTrampoline","~endReadable _stream_readable.js:1090:21","~initRead _tls_wrap.js:272:18","~once events.js:289:44","~_onceWrap events.js:281:19","(bytecode) ~StaNamedOwnProperty","~FastBuffer buffer.js:72:1","(builtin) TypedArrayConstructor","(builtin) CreateTypedArray","(C++) v8::internal::Runtime_AddDictionaryProperty","~onSocketCloseDestroySSL _tls_wrap.js:451:33","~resume _stream_readable.js:901:16","(C++) v8::internal::Map::Update","(bytecode) ~CallUndefinedReceiver","(bytecode) ~CallProperty1","(C++) v8::internal::Log::MessageBuilder::AppendCharacter","(bytecode) ~Inc","(C++) __kernelrpc_mach_vm_purgable_control_trap","(bytecode) ~TestTypeOf","(bytecode) ~Mov","~_finish _http_client.js:286:51","~freeParser _http_common.js:178:20","(C++) v8::internal::Runtime_StoreCallbackProperty","(builtin) CallFunction_ReceiverIsNullOrUndefined","(C++) v8::internal::Runtime_LoadPropertyWithInterceptor","(bytecode) ~ThrowReferenceErrorIfHole","(C++) std::__1::basic_string","(builtin) LoadIC_FunctionPrototype","(C++) ___vfprintf","(bytecode) ~Jump","(C++) v8::internal::Builtin_ArraySplice","(C++) v8::internal::Heap::GenerationalBarrierForElementsSlow","emit events.js:147:44","~getName _http_agent.js:116:43","~_unrefTimer net.js:341:52","(bytecode) ~JumpIfNull","~emitAfterScript internal/async_hooks.js:354:25","_extend util.js:321:17","(builtin) ObjectKeys","~get internal/url.js:437:8","~format internal/url.js:382:27","(C++) _freopen","~isIPv4 internal/net.js:25:16","(C++) v8::internal::InternalizedStringKey::InternalizedStringKey","(C++) __kernelrpc_mach_vm_deallocate_trap","~Writable _stream_writable.js:203:18","~_cacheSession https.js:233:55","(builtin) StringPrototypeStartsWith","(bytecode) ~JumpIfNotNull","(C++) v8::internal::SaveContext::SaveContext","~checkForgottenReturns ./node_modules/bluebird/js/release/debuggability.js:435:31","(bytecode) ~JumpIfNullConstant","(C++) v8::internal::Builtin_ArrayShift","(C++) v8::internal::Builtin_Impl_ArrayShift","Readable.on _stream_readable.js:803:33","(C++) ___vfwscanf","(C++) _vm_region_recurse_64","~_addHeaderLines _http_incoming.js:110:25","~_addHeaderLine _http_incoming.js:277:24","(builtin) StringEqual","(bytecode) ~Star","(C++) v8::internal::Heap::AllocateRaw","(C++) v8::internal::FunctionCallbackArguments::FunctionCallbackArguments","(C++) v8::internal::FunctionTemplateInfo::IsTemplateFor","~alloc internal/freelist.js:13:8","(C++) v8::internal::HashTable","~WritableState _stream_writable.js:54:23","(C++) v8::internal::JSObject::GetElementsAccessor","~emitPromiseRejectionWarnings internal/process/promises.js:103:38","(bytecode) ~TestGreaterThan","(builtin) LoadIC","(bytecode) ~InvokeIntrinsic","onStreamRead internal/stream_base_commons.js:134:22","~getHeader _http_outgoing.js:483:57","(builtin) CEntry_Return1_DontSaveFPRegs_ArgvOnStack_BuiltinExit","internalTickCallback internal/process/next_tick.js:50:32","Readable.read _stream_readable.js:377:35","(builtin) FunctionPrototypeHasInstance","(builtin) CallBoundFunction","(C++) std::__1::ios_base::~ios_base","(bytecode) ~Sub","~Writable.end _stream_writable.js:571:34","~endWritable _stream_writable.js:661:21","~needFinish _stream_writable.js:609:20","(bytecode) ~LdaZero","(C++) v8::internal::Builtin_Impl_HandleApiCall","(builtin) StringPrototypeIndexOf","~maybeReadMore_ _stream_readable.js:569:24","nextTick internal/process/next_tick.js:105:20","(bytecode) ~StackCheck","~free internal/freelist.js:25:7","(bytecode) ~CreateEmptyArrayLiteral","~httpSocketSetup _http_common.js:202:25","removeListener events.js:306:28","(C++) std::__1::locale::id::__get","(builtin) StringAdd_ConvertRight_NotTenured","(bytecode) ~CallUndefinedReceiver2","(C++) v8::internal::Handle","~ok assert.js:357:12","(builtin) KeyedLoadIC_PolymorphicName","~getHighWaterMark internal/streams/state.js:10:26","~highWaterMarkFrom internal/streams/state.js:5:27","(bytecode) ~LdaFalse","~afterWrite _stream_writable.js:481:20","(C++) v8::internal::Runtime_StringParseInt","(C++) v8::internal::FunctionCallbackArguments::Call","~destroyHooksExist internal/async_hooks.js:311:27","(C++) v8::internal::Factory::CopyJSObjectWithAllocationSite","~cleanParser _http_common.js:228:21","(C++) v8::internal::OFStreamBase::xsputn","(C++) v8::internal::Factory::AllocateRawWithAllocationSite","(C++) v8::internal::FindOneByteStringIndices","(bytecode) ~CallProperty2","(C++) v8::internal::ExitFrame::GetStateForFramePointer","(bytecode) ~JumpIfToBooleanFalse","(builtin) LoadIC_Noninlined","(C++) v8::internal::NormalizedMapCache::Get","~_deferToConnect _http_client.js:705:25","(bytecode) ~TestLessThan","(C++) std::__1::basic_istream","(C++) v8::internal::Runtime_Interrupt","(C++) v8::internal::StubFrame::type","(C++) v8::internal::StringHasher::GetHashField","~onFinish _http_outgoing.js:670:18","(builtin) ConstructFunction","(bytecode) ~BitwiseAnd","TLSSocket _tls_wrap.js:291:19","~Queue.length ./node_modules/bluebird/js/release/queue.js:54:35","pushAsyncIds internal/async_hooks.js:389:22","(builtin) CallForwardVarargs","(builtin) InterpreterPushUndefinedAndArgsThenCall","(bytecode) ~CallUndefinedReceiver1","Readable.removeListener _stream_readable.js:833:45","(builtin) Add","(C++) std::__1::basic_streambuf","(C++) v8::internal::Log::MessageBuilder::MessageBuilder","matchKnownFields _http_incoming.js:141:26","(C++) v8::internal::Script::GetPositionInfo","(builtin) ArrayPrototypePush","~destroySSL _tls_wrap.js:457:20","~_destroySSL _tls_wrap.js:461:55","(builtin) JSEntryTrampoline","(lib) /usr/lib/system/libsystem_malloc.dylib","~validateHeaderValue _http_outgoing.js:454:29","~checkInvalidHeaderChar _http_common.js:224:32","(bytecode) ~AddSmi","processImmediate timers.js:589:26","~TLSSocket._releaseControl _tls_wrap.js:612:47","(bytecode) ~Add","~tryConvertToPromise ./node_modules/bluebird/js/release/thenables.js:7:29","ClientRequest _http_client.js:64:23","(builtin) ArraySingleArgumentConstructor_Holey_DisableAllocationSites","(bytecode) ~ExtraWide","(C++) v8::internal::StringTable::LookupStringIfExists_NoAllocate","(C++) v8::internal::JavaScriptFrameIterator::Advance","_addHeaderLine _http_incoming.js:277:24","~Promise._receiverAt ./node_modules/bluebird/js/release/promise.js:334:42","(bytecode) ~CreateRestParameter","(C++) v8::internal::Builtin_Impl_ObjectDefineProperty","onceWrapper events.js:273:21","(builtin) GrowFastSmiOrObjectElements","(C++) ___find_warguments","(builtin) RecordWrite","(bytecode) ~Construct","(bytecode) ~LdaSmi.Wide","~getDomain ./node_modules/bluebird/js/release/promise.js:18:25","(C++) v8::internal::String::GetFlatContent","~get internal/url.js:518:8","~Promise._proxy ./node_modules/bluebird/js/release/promise.js:423:37","(bytecode) ~LdaImmutableContextSlot","~Readable.isPaused _stream_readable.js:316:39","~Promise._setFulfilled ./node_modules/bluebird/js/release/promise.js:293:44","(bytecode) ~BitwiseOrSmi.ExtraWide","(C++) v8::internal::Builtin_ArrayUnshift","~normalizeArgs net.js:176:23","connect _tls_wrap.js:1189:35","get internal/url.js:597:8","afterConnect net.js:1051:22","(C++) v8::internal::LookupIterator::NotFound","(C++) v8::internal::Runtime_AllocateInNewSpace","(C++) v8::internal::IdleScavengeObserver::Step","~defaultFireEvent ./node_modules/bluebird/js/release/debuggability.js:308:26","(C++) v8::internal::String::SlowEquals","(C++) v8::internal::Logger::ApiObjectAccess","_onceWrap events.js:281:19","(regexp) ^((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$","~InnerArrayJoin native array.js:282:24","(bytecode) ~JumpIfFalse","~Promise._target ./node_modules/bluebird/js/release/promise.js:528:37","ImmediateList.append timers.js:550:42","(builtin) TypedArrayInitializeWithBuffer","_finish _http_outgoing.js:738:53","MappingPromiseArray._promiseFulfilled ./node_modules/bluebird/js/release/map.js:35:60","_destroy internal/streams/destroy.js:32:30","_addHeaderLines _http_incoming.js:110:25","(builtin) StringToLowerCaseIntl","~normalizeConnectArgs _tls_wrap.js:1106:30","(builtin) MathMin","(C++) v8::base::TimeDelta::InMicroseconds","(builtin) InterpreterPushArgsThenCall","~prefinish _stream_writable.js:627:19","~PromiseArray._resolve ./node_modules/bluebird/js/release/promise_array.js:124:44","~Bluebird.map.then ./keep-alive-off.js:40:7","~timeEnd console.js:249:45","~timeLogImpl console.js:267:21","~hrtime internal/process/per_thread.js:100:35"];
+levels = [[0,1,0,0,1200,4],[0,1,1,0,1,5,0,1,6,0,78,8,0,66,208,0,326,212,0,5,278,0,27,296,0,105,301,0,3,302,0,60,311,0,16,318,0,3,322,0,29,324,0,63,355,0,45,370,0,1,376,0,1,401,0,1,437,0,2,489,0,70,512,0,126,515,0,2,581,0,147,586,0,22,617],[0,1,2,0,1,2,0,1,2,0,78,9,0,14,135,0,1,209,0,22,286,0,11,333,0,8,366,0,5,417,0,2,432,0,1,442,0,1,476,0,1,508,0,1,40,0,1,151,0,2,207,0,311,213,0,2,278,0,1,300,0,1,354,0,1,420,0,2,432,0,1,465,0,1,476,0,1,546,0,1,579,5,26,297,0,1,482,0,1,151,0,30,288,0,2,408,0,1,465,0,66,472,0,1,516,0,1,518,0,1,538,0,1,569,0,1,610,3,14,135,0,19,288,0,1,354,0,26,472,0,1,105,0,3,151,0,7,202,0,1,278,0,1,402,0,2,474,0,1,539,3,27,325,0,1,440,0,1,446,0,21,135,0,3,151,0,38,356,0,1,408,0,1,278,0,1,309,0,41,371,0,2,529,7,1,278,0,66,472,0,1,630,1,1,278,0,49,286,0,32,333,0,21,366,0,14,417,0,3,442,0,4,508,0,1,527,5,1,207,0,141,216,0,2,579,0,1,154,0,21,599],[0,1,3,0,1,3,0,1,7,0,2,10,0,6,11,0,6,16,0,1,30,0,8,31,0,1,64,0,1,67,0,14,70,0,39,110,0,8,7,0,1,45,0,4,109,0,1,502,0,1,210,0,22,287,0,9,288,0,2,472,0,1,151,0,7,377,0,5,418,0,1,302,0,1,433,0,1,426,0,1,302,0,1,509,0,1,7,1,2,135,0,311,214,5,1,302,0,1,568,1,1,571,0,1,509,0,1,580,5,21,268,0,2,278,0,1,302,0,1,408,0,1,474,0,1,236,1,1,278,0,27,289,0,2,302,3,56,289,0,1,435,0,9,599,2,1,278,1,1,151,3,9,7,0,1,28,0,1,48,0,1,94,0,2,123,0,19,312,2,25,312,0,1,7,3,2,411,0,5,543,1,1,151,0,1,275,0,1,475,4,27,326,1,1,447,0,6,7,0,1,48,0,2,94,0,1,109,0,3,123,0,1,135,0,1,160,0,3,163,0,2,320,0,1,457,3,1,151,0,8,288,0,1,302,0,1,408,0,27,472,3,40,372,0,1,472,10,66,328,3,49,287,0,32,472,0,1,151,0,1,354,0,18,377,0,1,472,0,14,418,0,3,516,0,1,151,0,1,416,0,1,420,0,1,500,0,1,151,5,1,420,0,1,151,0,1,278,0,1,309,0,136,340,0,2,381,0,1,151,0,1,580,1,6,303,0,10,304,0,1,376,0,4,388],[3,2,11,0,6,15,0,6,11,0,1,2,0,7,11,0,1,46,0,1,65,0,1,11,0,9,11,0,5,95,0,39,111,14,1,151,0,3,93,0,5,135,0,1,278,0,6,288,0,1,354,0,4,472,0,1,494,0,1,504,0,4,334,0,4,360,0,1,435,0,1,334,0,1,360,1,7,378,0,4,135,0,1,354,1,1,434,5,2,7,0,310,215,0,1,278,10,1,151,5,1,154,0,19,298,0,1,300,4,1,475,3,13,303,0,7,304,0,4,307,0,3,388,5,1,151,0,1,278,0,1,302,0,26,303,0,14,304,0,4,307,0,8,388,0,1,572,0,1,558,0,8,303,0,1,304,22,1,40,0,3,135,0,4,288,0,4,313,0,1,315,0,6,319,2,5,135,0,1,151,0,8,319,0,1,408,0,10,472,4,1,151,0,1,520,0,2,302,0,1,408,0,2,563,8,27,327,1,1,448,25,2,357,0,3,359,0,1,435,0,2,450,2,4,357,0,11,359,0,2,435,0,10,450,3,9,288,0,30,472,0,1,599,0,1,261,10,9,135,0,1,151,0,1,263,0,1,307,0,41,329,0,2,449,0,1,459,0,10,461,3,13,135,0,2,151,0,2,278,0,26,472,0,1,504,0,1,510,0,3,532,0,1,600,1,13,334,0,18,360,2,1,475,0,17,516,0,1,261,0,14,135,1,2,305,14,134,341,0,1,560,0,1,639,0,1,167,0,1,354,1,1,426,1,6,198,0,10,305,1,4,135],[3,1,12,0,1,15,0,6,49,0,6,15,0,1,3,0,7,15,0,1,47,0,1,66,0,1,15,0,9,15,0,4,11,0,1,108,0,39,112,15,2,88,0,1,413,0,5,7,1,6,289,1,4,289,0,1,510,0,1,275,0,4,335,0,4,361,0,1,436,0,1,335,0,1,361,1,5,288,0,2,441,0,2,7,0,1,163,0,1,503,10,1,151,0,308,216,0,1,567,18,1,40,0,9,135,0,7,299,0,1,302,0,1,354,9,13,198,0,7,305,0,4,290,0,3,135,8,1,151,0,24,198,0,1,278,0,14,305,0,4,290,0,5,135,0,1,151,0,1,389,0,1,426,0,1,261,1,8,198,0,1,305,22,1,7,0,2,7,0,1,320,0,4,289,0,4,314,0,1,316,0,6,135,2,2,7,0,1,43,0,1,94,0,1,183,1,8,135,1,6,289,0,4,599,9,2,472,8,18,288,0,1,469,0,8,472,27,2,358,0,1,40,0,1,278,0,1,462,0,1,456,0,2,429,2,3,358,0,1,570,0,11,462,0,1,529,0,1,591,0,10,429,3,9,289,0,1,278,0,19,289,0,10,599,12,6,7,0,1,43,0,1,481,0,1,574,2,1,467,0,1,278,0,4,330,0,34,347,0,1,350,0,1,637,0,2,329,1,5,135,0,1,151,0,1,408,0,1,530,0,2,548,3,6,7,0,1,22,0,1,48,0,1,98,0,1,147,0,1,163,0,1,468,0,1,502,4,17,289,0,9,599,0,1,408,1,3,307,2,13,335,0,18,361,4,13,472,0,3,544,1,1,4,0,5,7,0,1,109,0,2,123,0,1,147,0,4,163,1,1,151,0,1,571,14,132,342,0,2,596,0,1,594,6,3,199,0,3,310,0,9,135,0,1,151,1,3,7,0,1,109],[3,1,13,0,1,2,0,5,11,0,1,39,0,6,17,1,7,32,0,1,39,1,1,68,0,9,71,0,4,15,0,1,40,0,38,113,0,1,207,15,2,89,0,1,424,6,1,278,0,1,290,0,4,291,1,4,291,2,4,336,0,1,362,0,3,393,1,1,336,0,1,393,1,5,379,0,1,203,0,1,278,15,46,217,0,260,340,0,2,381,0,1,151,18,1,123,0,7,7,0,1,102,0,1,147,0,7,135,11,5,199,0,8,310,0,7,135,0,1,154,0,1,308,0,1,309,0,1,410,0,1,109,0,1,149,0,1,389,9,1,151,0,9,199,0,14,310,1,13,135,0,1,285,0,1,151,0,1,354,0,2,492,0,1,7,0,1,28,0,1,109,0,2,147,1,1,278,3,3,199,0,3,310,0,1,554,0,1,609,0,1,135,26,4,321,0,1,40,0,1,167,0,2,323,0,1,40,0,3,7,0,1,45,0,1,48,0,1,320,8,5,7,0,1,109,0,1,149,0,1,267,1,1,302,0,1,307,0,4,321,0,4,321,9,2,261,8,18,328,1,8,328,27,1,105,0,1,470,0,1,349,1,1,7,1,2,430,2,1,240,0,1,470,0,1,499,1,5,7,0,1,43,0,1,45,0,1,48,0,1,98,0,1,462,0,1,638,2,9,430,0,1,529,3,3,307,0,6,373,1,1,151,0,1,302,0,16,373,0,1,572,0,10,373,25,1,151,0,1,325,0,2,331,0,2,151,0,5,348,0,2,354,0,10,403,0,1,458,0,11,497,0,3,634,0,1,151,4,1,7,0,1,147,0,1,163,0,1,502,0,1,503,2,1,454,0,2,354,20,2,151,0,15,291,0,9,291,2,2,151,0,1,533,2,1,151,0,12,336,0,18,393,4,1,261,0,12,379,0,2,401,0,1,544,32,1,151,0,92,220,0,1,278,0,8,422,0,1,500,0,1,592,0,28,632,0,1,151,0,1,309,7,3,387,0,3,135,0,1,4,0,4,7,0,1,27,0,1,147,0,1,320,0,1,623],[3,1,14,0,1,7,0,5,15,0,1,7,0,5,11,0,1,29,1,6,11,0,1,39,0,1,48,1,1,69,0,1,72,0,5,73,0,3,91,0,4,96,0,1,109,0,38,114,0,1,208,15,1,302,0,1,409,8,1,40,0,1,40,0,3,292,1,4,292,2,4,337,1,3,394,1,1,337,0,1,443,1,1,263,0,4,380,0,1,454,16,46,218,0,1,151,0,1,302,0,256,341,0,1,415,0,1,459,0,1,382,0,1,585,29,1,4,0,6,7,11,1,200,0,4,387,0,7,135,0,1,354,0,5,7,0,1,43,0,1,306,17,9,387,0,11,135,0,1,167,0,1,354,0,1,564,1,2,4,0,6,7,0,1,43,0,1,98,0,1,320,0,1,495,0,1,534,3,1,493,0,1,507,10,1,278,0,2,387,0,1,135,0,2,603,2,1,545,26,4,319,0,1,7,1,1,78,0,1,151,0,1,317,24,1,533,0,2,319,0,1,486,0,1,552,0,1,151,0,2,319,0,1,486,19,1,40,0,1,135,0,1,307,0,14,329,0,1,461,1,1,135,0,4,329,0,3,461,27,1,7,0,1,471,4,1,300,0,1,431,2,1,473,0,1,550,15,1,278,0,1,354,0,6,431,0,1,629,4,2,290,0,1,467,0,6,374,3,16,374,0,1,421,0,9,374,0,1,500,26,1,326,0,2,151,2,4,84,0,1,354,2,2,88,0,5,135,0,1,400,0,2,472,1,8,498,0,3,595,0,2,576,0,1,635,37,1,278,0,14,292,0,9,292,8,12,337,0,1,278,0,14,394,0,3,443,5,11,380,0,1,573,36,91,343,0,1,641,1,2,151,0,1,302,0,4,336,0,1,400,2,28,632,9,3,135,0,1,7,0,1,43,0,1,123],[5,5,50,1,5,15,2,5,15,0,1,35,0,1,45,2,1,2,1,4,74,0,1,88,0,3,74,0,1,11,0,1,99,0,2,103,1,38,115,0,1,209,16,1,151,8,1,7,0,1,7,0,3,293,1,4,293,2,4,338,1,3,135,1,1,338,0,1,444,2,4,135,17,46,219,2,256,342,51,1,40,0,4,135,0,5,7,0,1,109,0,1,468,25,7,135,0,1,256,0,1,408,0,2,7,0,1,27,0,1,94,0,2,123,0,1,468,0,1,489,0,1,501,0,1,547,0,1,559,33,2,135,0,1,7,31,4,135,29,1,510,0,2,135,0,1,151,2,2,135,0,1,602,19,1,94,0,1,7,0,1,415,0,1,278,0,4,330,0,7,347,0,2,350,0,1,135,1,1,123,0,4,347,0,2,135,0,1,167,34,1,135,2,1,151,18,6,135,5,1,151,0,1,421,1,5,375,0,1,376,3,1,151,0,15,375,1,8,375,0,1,633,27,1,469,4,1,85,0,1,404,0,2,517,3,2,89,0,3,7,0,1,320,0,1,496,1,1,289,0,1,599,1,1,4,0,1,36,0,1,261,0,1,382,0,2,499,0,1,562,0,1,576,0,1,36,0,1,43,0,1,606,41,14,293,0,9,293,8,11,338,0,1,611,1,12,135,0,2,521,0,1,302,0,1,494,0,1,624,5,11,135,37,91,220,0,1,337,4,1,278,0,2,337,0,1,420,3,28,221,9,1,7,0,1,109,0,1,623],[5,5,11,1,5,18,2,1,33,0,4,37,0,1,36,3,1,7,1,1,11,0,3,79,0,1,89,0,3,79,0,1,15,0,1,100,0,2,104,1,38,116,0,1,210,27,1,151,0,2,294,1,4,294,2,4,339,1,2,7,0,1,22,1,1,339,0,1,420,2,3,7,0,1,163,17,45,220,0,1,278,2,246,220,0,1,263,0,8,422,0,1,517,51,1,27,0,1,4,0,1,7,0,1,48,0,1,109,32,3,7,0,1,48,0,1,109,0,1,123,0,1,495,46,1,7,0,1,45,32,4,7,30,1,7,0,1,466,3,1,7,0,1,109,24,3,325,0,1,331,0,1,167,0,2,348,0,4,403,0,2,351,0,1,7,2,3,403,0,1,497,0,1,7,0,1,283,35,1,147,21,4,7,0,1,22,0,1,545,8,5,135,5,15,135,1,6,135,0,1,151,0,1,539,0,1,602,32,1,540,0,1,186,5,1,151,0,1,449,6,1,408,54,14,294,0,9,294,8,1,302,0,9,339,0,1,423,0,1,612,1,7,7,0,1,28,0,1,123,0,1,468,0,1,502,0,1,525,0,2,522,1,1,261,6,1,4,0,6,7,0,1,123,0,1,457,0,1,481,0,1,545,37,85,221,0,1,400,0,1,408,0,1,589,0,2,608,0,1,628,0,1,340,5,1,408,0,1,611,4,28,222],[5,5,15,1,5,19,2,1,11,0,1,11,0,1,40,0,1,41,0,1,44,6,1,15,0,1,80,0,2,82,0,1,40,0,1,80,0,2,82,0,1,97,0,1,101,0,1,105,0,1,107,1,38,117,0,1,40,28,1,295,0,1,460,1,4,460,2,1,40,0,3,428,5,1,428,24,1,40,0,44,221,3,246,343,1,1,221,0,1,278,0,1,302,0,3,336,0,1,400,0,1,490,241,3,326,0,1,256,1,1,39,0,1,84,0,1,88,0,3,288,0,1,40,0,1,391,3,1,88,0,1,472,0,1,494,0,1,498,73,3,7,0,1,22,0,1,62,5,5,7,0,2,22,0,1,43,0,1,48,0,1,123,0,1,147,0,1,149,0,1,468,0,1,519,0,1,545,1,1,7,0,1,22,0,1,98,0,1,258,0,1,466,0,1,601,35,1,604,0,1,405,6,1,505,61,4,295,0,10,460,0,9,460,9,9,428,0,1,565,14,2,372,56,1,151,0,83,222,0,1,302,2,1,263,0,1,278,0,1,281,0,1,554,0,1,341,6,1,621,4,28,223],[5,1,51,0,4,53,1,4,20,0,1,23,2,1,34,0,1,15,0,1,7,0,1,42,7,1,75,0,1,81,0,1,83,0,1,87,0,1,90,0,1,92,0,1,83,0,1,93,0,1,39,0,1,40,0,1,106,0,1,13,1,38,118,0,1,211,28,1,2,0,1,135,1,4,135,2,1,7,0,3,429,5,1,429,24,1,254,0,44,222,3,1,151,0,244,220,0,1,408,1,1,151,2,2,337,0,1,536,1,1,491,241,1,327,0,2,398,0,1,13,1,1,349,0,1,404,0,1,89,0,3,289,0,1,147,0,1,151,3,1,89,0,1,289,0,1,36,0,1,499,141,1,555,68,3,194,0,1,531,0,10,135,0,8,135,0,1,631,9,1,151,0,8,429,15,1,523,0,1,640,57,82,223,0,1,279,5,1,302,1,1,342,6,1,424,4,28,224],[5,1,52,0,2,11,0,1,39,0,1,54,1,4,21,0,1,24,3,1,38,1,1,25,7,1,11,1,1,84,0,1,39,2,1,84,0,1,40,0,1,98,0,1,102,1,1,7,1,36,119,0,2,191,29,1,3,0,1,7,1,2,7,0,1,123,0,1,495,3,3,430,5,1,430,25,43,223,0,1,279,4,1,151,0,242,221,0,1,278,5,1,338,0,1,420,244,1,151,0,2,399,0,1,332,2,1,186,0,1,449,0,1,151,0,2,412,5,1,449,0,1,412,212,2,151,0,1,195,1,6,7,0,1,62,0,1,109,0,1,256,0,1,320,0,1,4,0,3,7,0,1,28,0,2,468,0,1,559,11,8,430,15,1,524,0,1,627,57,82,224,0,1,280,7,1,422,11,28,225],[6,2,15,0,1,63,0,1,55,1,1,7,0,1,22,0,1,27,0,1,28,0,1,25,3,1,39,1,1,43,7,1,15,1,1,85,0,1,26,2,1,85,0,1,94,5,36,120,0,2,192,39,2,431,0,1,438,5,1,431,25,43,224,0,1,280,5,242,222,6,1,423,246,1,302,0,1,400,3,1,405,0,1,4,1,2,93,5,1,505,0,1,93,214,1,588,30,1,302,0,6,431,0,1,438,74,82,225,0,1,605,7,1,221,11,28,226],[6,2,58,1,1,11,5,1,26,3,1,22,9,1,76,1,1,86,3,1,40,6,36,113,0,2,193,39,2,135,0,1,439,5,1,135,25,43,225,0,1,281,5,240,223,0,2,279,6,1,424,251,1,151,2,1,391,0,1,413,6,1,391,246,5,135,0,1,408,0,1,302,74,82,226,0,1,78,7,1,642,11,28,227],[6,1,59,0,1,61,1,1,15,19,1,77,5,1,7,6,8,11,0,26,114,0,2,121,0,2,194,39,1,7,0,1,466,0,1,154,5,1,7,25,43,226,0,1,278,5,239,224,0,1,564,0,2,280,261,1,451,0,1,154,6,1,451,246,5,7,76,82,227,8,1,191,11,28,228],[6,1,60,0,1,39,1,1,56,19,1,78,12,8,15,0,26,115,0,2,122,0,2,195,73,43,227,6,236,225,0,1,354,0,1,400,0,1,454,1,1,224,0,1,281,261,1,203,7,1,203,327,1,151,0,81,228,8,1,643,11,28,229],[7,1,62,1,1,57,32,8,174,0,26,116,0,1,105,0,1,124,0,2,196,73,1,40,0,41,228,0,1,282,6,1,72,0,235,226,4,1,167,0,1,488,261,1,151,7,1,204,328,81,229,8,1,644,11,3,271,0,25,590],[9,1,40,32,8,11,0,26,117,0,1,123,0,1,125,0,2,197,73,1,7,0,40,229,0,1,265,8,235,227,275,1,205,328,4,231,0,3,255,0,5,271,0,1,354,0,66,590,0,1,597,0,1,613,8,1,645,11,3,135,1,4,25,0,20,238],[9,1,4,32,8,15,0,1,128,0,25,131,1,1,126,0,2,198,74,1,13,0,1,105,0,32,231,0,1,255,0,5,271,0,1,40,8,1,88,0,234,228,275,1,154,328,4,238,0,1,607,0,2,616,0,3,135,0,2,272,1,6,25,0,1,234,0,58,238,0,1,278,1,1,401,8,1,105,11,3,7,1,2,7,0,1,26,0,1,256,0,18,239,0,1,367,0,1,477],[42,5,175,0,1,184,0,1,187,0,1,190,0,1,129,0,25,132,1,1,127,0,2,199,74,1,43,0,1,230,0,2,39,0,3,40,0,1,233,0,24,238,0,1,259,0,1,284,0,1,256,0,4,135,0,1,272,0,1,7,8,1,542,0,230,229,0,2,265,0,1,278,0,1,453,604,3,239,0,1,401,0,1,539,0,2,364,0,3,7,0,2,273,1,2,7,0,1,43,0,1,48,0,1,306,0,1,622,0,1,235,0,54,239,0,2,367,0,1,477,0,1,593,11,1,123,19,17,241,0,1,276,0,1,513],[42,4,11,0,1,39,0,1,185,0,1,11,0,1,44,0,1,130,0,1,39,0,15,119,0,1,144,0,2,150,0,3,156,0,1,162,0,1,168,0,1,169,1,1,40,0,2,200,76,1,7,0,1,232,0,2,7,0,1,40,0,1,234,0,2,105,0,22,239,0,1,39,1,1,257,0,2,7,0,1,48,0,1,109,0,1,273,10,1,154,0,205,231,0,10,255,0,13,271,0,1,458,0,1,344,0,1,554,606,3,241,0,1,43,1,1,151,0,1,626,3,1,167,0,1,354,7,1,420,0,53,241,0,1,477,0,2,368,0,1,36,32,1,440,0,16,615,0,1,277,0,1,151],[42,4,15,0,1,183,0,1,186,0,1,15,1,1,40,0,1,161,0,14,120,0,1,167,0,1,145,0,1,40,0,1,119,0,1,157,0,2,158,0,1,145,0,1,40,0,1,170,1,1,4,0,1,201,0,1,202,81,1,235,0,1,7,0,1,102,0,1,240,0,20,241,0,1,276,0,1,7,1,1,105,4,1,274,11,3,151,0,16,233,0,178,238,0,2,259,0,1,284,0,2,443,0,1,513,0,1,526,0,1,557,0,1,151,0,4,363,0,1,425,0,1,459,0,2,479,0,1,487,0,10,135,0,3,272,1,1,345,607,3,242,3,1,627,13,34,242,0,19,615,0,1,478,0,2,369,35,1,246,0,3,262,0,1,407,0,1,464,0,8,566,0,1,636,0,1,494],[42,4,176,1,1,40,0,1,188,1,1,7,1,14,113,1,1,146,0,1,152,0,1,120,0,1,40,0,2,159,0,1,146,0,1,7,0,1,171,3,1,203,81,1,236,2,1,40,0,19,242,0,1,285,0,1,277,2,1,258,4,1,275,14,14,25,0,1,420,0,1,583,0,1,151,0,169,239,0,1,240,0,1,278,0,3,367,0,1,440,0,1,477,0,1,558,0,2,404,1,1,88,0,1,444,0,1,408,1,1,302,1,4,364,0,1,426,1,2,480,1,9,7,0,1,466,0,3,273,1,1,346,607,1,246,0,1,464,0,1,587,17,1,36,0,9,246,0,5,262,0,2,407,0,1,443,0,2,464,0,14,566,0,6,246,0,2,262,0,1,407,0,3,464,0,7,566,1,1,369,0,1,551,35,1,247,0,1,135,0,2,266,0,1,135,0,1,481,0,3,82,0,3,352,0,2,353,0,1,151,0,1,449],[42,3,11,0,1,182,1,1,98,0,1,11,3,8,114,0,6,121,1,1,39,1,1,113,0,1,7,0,1,7,0,1,160,0,1,40,1,1,172,3,1,204,81,1,172,2,1,7,0,1,39,0,3,243,0,4,246,0,2,260,0,9,262,1,1,93,22,5,7,0,1,90,0,1,109,0,1,163,0,1,483,0,1,505,0,1,553,0,1,575,0,1,577,0,1,582,1,1,584,1,158,241,0,1,260,0,5,276,0,1,278,0,1,440,0,2,477,0,1,552,0,1,473,1,2,368,0,1,513,1,1,36,1,2,186,1,1,89,0,1,445,4,2,365,0,1,500,0,1,511,2,1,363,0,1,477,11,1,274,0,1,390,0,1,420,609,1,247,0,1,123,0,1,572,18,1,151,0,6,247,0,1,459,0,1,614,0,3,135,0,1,151,0,1,266,0,2,135,0,1,444,0,1,7,0,1,123,0,5,82,0,4,352,0,5,353,0,6,247,0,1,135,0,1,266,0,1,135,0,2,7,0,1,618,0,5,82,0,1,352,0,1,353,38,1,268,0,1,7,0,2,135,0,1,109,1,1,83,0,1,87,0,1,477,0,2,135,0,1,354,0,2,135,1,1,401],[42,3,15,0,1,135,2,1,15,3,8,115,0,5,122,0,1,164,1,1,147,1,1,121,3,1,163,1,1,173,3,1,205,81,1,237,3,1,109,0,3,82,0,4,247,0,1,36,0,1,261,0,1,40,0,4,135,0,4,266,1,1,278,37,1,236,1,155,242,0,1,260,0,2,443,0,1,414,0,1,4,0,3,383,0,1,539,2,1,36,0,1,478,1,1,535,1,2,369,0,1,554,3,2,405,1,1,456,11,1,408,12,1,362,0,1,300,610,1,268,21,1,248,0,5,268,1,1,300,0,2,7,0,1,534,1,1,135,0,1,7,0,1,503,0,1,354,2,1,83,0,1,87,0,1,244,0,2,477,0,2,135,0,1,420,0,1,426,0,2,135,0,1,300,0,2,395,0,5,268,0,1,619,0,1,7,0,1,135,0,1,7,3,2,83,0,1,87,0,2,244,0,1,135,0,1,135,38,1,269,1,1,4,0,1,495,2,1,485,0,1,244,0,1,36,0,1,98,0,1,163,1,2,7],[42,3,177,0,1,7,2,1,189,3,8,116,0,2,134,0,3,138,0,1,165,3,1,122,9,1,25,86,1,83,0,1,167,0,1,244,0,1,11,0,1,40,0,1,248,0,1,268,2,1,7,0,2,7,0,1,147,0,1,267,0,4,135,41,1,52,0,1,151,0,53,243,0,40,246,0,1,260,0,33,262,0,2,278,0,1,302,0,4,407,0,2,419,0,3,443,0,5,464,0,1,477,0,8,566,0,1,392,0,1,93,0,1,444,1,1,578,0,3,384,8,1,43,0,1,551,4,1,39,0,1,555,638,1,269,21,1,249,0,5,269,6,1,7,5,1,84,0,1,244,0,1,135,0,1,36,0,1,478,0,2,7,2,1,7,0,1,258,1,2,396,0,5,269,0,1,620,1,1,481,4,2,84,0,1,244,0,2,135,0,1,320,0,1,320,38,1,270,5,1,506,0,1,135],[42,3,11,3,1,39,3,6,117,0,2,141,0,2,135,0,3,125,0,1,151,3,1,138,9,1,206,86,1,263,1,1,40,0,1,15,0,1,264,0,1,249,0,1,269,7,1,7,0,1,109,0,1,256,0,1,283,43,20,82,0,1,263,0,1,278,0,10,352,0,19,353,0,1,445,0,1,528,0,1,151,0,33,247,0,2,278,0,3,443,0,1,453,0,1,416,0,19,135,0,12,266,0,1,302,0,1,426,3,4,135,0,1,135,0,1,420,0,1,93,0,1,444,0,1,463,0,4,7,0,1,123,0,1,36,0,5,82,0,1,352,0,2,353,1,1,420,0,1,560,2,1,302,0,2,385,14,1,7,639,1,270,21,1,236,0,4,270,0,1,282,12,1,554,0,1,135,0,1,7,9,1,505,0,1,598,0,5,270,7,2,85,0,1,135,0,1,7,0,1,62,40,1,603,5,1,151,0,1,45],[42,3,15,3,1,7,3,2,128,0,3,133,0,1,140,0,1,142,0,1,148,0,1,7,0,1,149,0,3,126,4,1,125,98,1,245,0,1,251,1,1,236,0,1,270,54,5,83,0,7,87,0,5,244,0,1,354,0,1,408,0,1,514,2,8,135,0,1,151,0,1,420,0,1,93,0,11,135,0,6,395,0,1,494,3,5,248,0,26,268,0,1,282,0,1,354,2,1,151,0,1,444,0,1,494,2,8,7,0,1,62,0,1,109,0,1,147,0,1,160,0,1,163,0,1,258,0,1,455,0,1,457,0,1,468,0,1,525,0,1,559,0,11,135,0,1,275,5,4,7,0,1,7,1,1,88,0,1,52,7,1,83,0,4,87,0,1,135,0,2,135,2,1,561,3,2,203,654,1,135,21,1,427,0,3,135,0,1,554,14,1,7,12,3,135,0,1,151,0,1,248,7,1,151,0,1,540,0,1,109],[42,1,178,0,1,180,0,1,181,7,2,155,0,1,119,0,1,136,0,1,137,0,1,119,0,1,135,0,1,135,2,3,127,4,1,126,99,1,252,1,1,172,0,1,135,54,3,84,0,2,485,0,7,244,0,5,135,5,5,7,0,1,123,0,2,258,2,1,88,0,7,7,0,2,102,0,1,496,0,1,537,0,1,302,0,1,354,0,4,396,0,1,354,3,2,249,0,1,278,0,2,482,0,24,269,0,1,408,0,1,469,5,1,354,0,1,300,21,7,7,0,1,109,0,1,123,0,1,163,0,1,406,12,1,89,8,1,485,0,4,244,0,1,43,0,1,7,0,1,455,6,1,278,0,1,386,654,1,7,22,2,7,0,1,495,28,2,7,0,1,466,1,1,482,8,1,541],[42,1,179,0,1,179,0,1,179,7,1,135,0,1,166,0,1,120,0,1,7,0,1,39,0,1,120,0,1,7,0,1,7,2,1,135,0,1,143,0,1,153,4,1,127,99,1,23,1,1,250,0,1,123,54,1,85,0,1,278,0,1,362,0,1,404,0,1,506,0,7,135,0,4,7,0,1,109,15,1,89,13,1,26,0,1,397,0,1,452,0,1,556,4,1,236,0,1,454,1,2,408,0,24,270,53,1,449,8,1,302,0,4,135,723,1,625,8,1,261],[42,1,39,0,1,47,0,1,47,7,1,7,0,1,80,0,1,113,1,1,43,0,1,113,4,1,139,1,1,154,4,1,151,99,1,253,57,1,540,2,1,278,0,1,354,0,5,7,0,1,43,0,1,123,20,1,354,21,1,427,4,22,135,0,1,248,0,1,354,53,1,4,9,1,7,0,1,123,0,1,481,0,1,484],[42,1,7,0,1,40,0,1,40,8,1,80,0,1,121,2,1,114,111,1,105,57,1,541,58,9,7,0,1,43,0,1,62,0,1,109,0,1,256,0,1,267,0,2,320,0,1,457,0,2,481,0,1,484,0,1,545,0,1,549,0,1,249],[43,1,109,0,1,7,9,1,122,2,1,115,111,1,7,57,1,261,80,1,236],[54,1,134,2,1,116,250,1,427],[54,1,135,2,1,141],[54,1,7,2,1,142],[57,1,135],[57,1,7]];
+numTicks = 1201;
+
+let rangeMin = 0;
+let rangeMax = 1;
+let topLevel = 0;
+let query = '';
+let graphWidth, pxPerTick;
+
+const pxPerLevel = 18;
+const collapseThreshold = 5;
+const hideThreshold = 0.5;
+const labelThreshold = 20;
+
+highlightEl.style.height = pxPerLevel + 'px';
+
+if (levels) {
+    init();
+}
+
+function init() {
+    document.body.classList.add('loaded');
+
+    // delta-decode bar positions
+    for (const level of levels) {
+        let prev = 0;
+        for (let i = 0; i < level.length; i += 3) {
+            level[i] += prev;
+            prev = level[i] + level[i + 1];
+        }
+    }
+
+    updateFromHash();
+    render();
+}
+
+window.onhashchange = () => {
+    updateFromHash();
+    render();
+};
+canvas.onclick = (e) => {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+    if (j === -1) return;
+    window.location.hash = [i, j].join(',');
+    removeHover();
+};
+document.getElementById('reset').onclick = () => {
+    searchEl.value = query = '';
+    window.location.hash = '';
+    render();
+};
+window.onresize = render;
+
+searchEl.oninput = (e) => {
+    query = e.target.value;
+    render();
+};
+
+function updateFromHash() {
+    const [i, j] = window.location.hash.substr(1).split(',').map(Number);
+
+    if (!isNaN(i) && !isNaN(j)) {
+        topLevel = i;
+        rangeMin = levels[i][j] / numTicks;
+        rangeMax = (levels[i][j] + levels[i][j + 1]) / numTicks;
+    } else {
+        topLevel = 0;
+        rangeMin = 0;
+        rangeMax = 1;
+    }
+}
+
+function tickToX(i) {
+    return (i - numTicks * rangeMin) * pxPerTick;
+}
+
+function render() {
+    if (!levels) return;
+
+    graphWidth = canvas.width = canvas.clientWidth;
+    canvas.height = pxPerLevel * (levels.length - topLevel);
+    canvas.style.height = canvas.height + 'px';
+
+    if (devicePixelRatio > 1) {
+        canvas.width *= 2;
+        canvas.height *= 2;
+        ctx.scale(2, 2);
+    }
+
+    pxPerTick = graphWidth / numTicks / (rangeMax - rangeMin);
+
+    ctx.textBaseline = 'middle';
+    ctx.font = '10px Tahoma, sans-serif';
+    ctx.strokeStyle = 'white';
+
+    for (let i = 0; i < levels.length - topLevel; i++) {
+        const level = levels[topLevel + i];
+
+        for (let j = 0; j < level.length; j += 3) {
+            const barIndex = level[j];
+            const x = tickToX(barIndex);
+            const y = i * pxPerLevel;
+            let numBarTicks = level[j + 1];
+
+            const inQuery = query && (names[level[j + 2]].indexOf(query) >= 0) || false;
+
+            // merge very small blocks into big "collapsed" ones for performance
+            const collapsed = numBarTicks * pxPerTick <= collapseThreshold;
+            if (collapsed) {
+                while (
+                    j < level.length - 3 &&
+                    barIndex + numBarTicks === level[j + 3] &&
+                    level[j + 4] * pxPerTick <= collapseThreshold &&
+                    (inQuery === (query && (names[level[j + 5]].indexOf(query) >= 0) || false))
+                ) {
+                    j += 3;
+                    numBarTicks += level[j + 1];
+                }
+            }
+
+            const sw = numBarTicks * pxPerTick - (collapsed ? 0 : 0.5);
+            const sh = pxPerLevel - 0.5;
+
+            if (x < -1 || x + sw > graphWidth + 1 || sw < hideThreshold) continue;
+
+            ctx.beginPath();
+            ctx.rect(x, y, sw, sh);
+
+            const ratio = numBarTicks / numTicks;
+
+            if (!collapsed) {
+                ctx.stroke();
+                const intensity = Math.min(1, ratio * Math.pow(1.16, i) / (rangeMax - rangeMin));
+                const h = 50 - 50 * intensity;
+                const l = 65 + 7 * intensity;
+                ctx.fillStyle = inQuery ? 'lightgreen' : `hsl(${h}, 100%, ${l}%)`;
+            } else {
+                ctx.fillStyle = inQuery ? 'lightgreen' : '#eee';
+            }
+            ctx.fill();
+
+            if (!collapsed && sw >= labelThreshold) {
+
+                const percent = Math.round(10000 * ratio) / 100;
+                const name = `${names[level[j + 2]]} (${percent}%, ${numBarTicks} samples)`;
+
+                ctx.save();
+                ctx.clip();
+                ctx.fillStyle = 'black';
+                ctx.fillText(name, Math.max(x, 0) + 1, y + sh / 2);
+                ctx.restore();
+            }
+        }
+    }
+}
+
+// pixel coordinates to bar coordinates in the levels array
+function xyToBar(x, y) {
+    const i = Math.floor(y / pxPerLevel) + topLevel;
+    const j = binarySearchLevel(x, levels[i]);
+    return {i, j};
+}
+
+// binary search of a block in a stack level
+function binarySearchLevel(x, level) {
+    let i = 0;
+    let j = level.length - 3;
+    while (i <= j) {
+        const m = 3 * ((i / 3 + j / 3) >> 1);
+        const x0 = tickToX(level[m]);
+        const x1 = tickToX(level[m] + level[m + 1]);
+        if (x0 <= x && x1 >= x) {
+            return x1 - x0 > collapseThreshold ? m : -1;
+        }
+        if (x0 > x) {
+            j = m - 3;
+        } else {
+            i = m + 3;
+        }
+    }
+    return -1;
+}
+
+if (window.orientation === undefined) {
+    canvas.onmousemove = addHover;
+    canvas.onmouseout = window.onscroll = removeHover;
+}
+
+function removeHover() {
+    canvas.style.cursor = '';
+    highlightEl.style.display = 'none';
+    tooltipEl.style.display = 'none';
+}
+
+function addHover(e) {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+
+    if (j === -1 || e.offsetX < 0 || e.offsetX > graphWidth) {
+        removeHover();
+        return;
+    }
+
+    canvas.style.cursor = 'pointer';
+
+    const level = levels[i];
+    const x = tickToX(level[j]);
+    const y = (i - topLevel) * pxPerLevel;
+    const sw = tickToX(level[j] + level[j + 1]) - x;
+
+    highlightEl.style.display = 'block';
+    highlightEl.style.left = x + 'px';
+    highlightEl.style.top = (canvas.offsetTop + y) + 'px';
+    highlightEl.style.width = sw + 'px';
+
+    const numBarTicks = level[j + 1];
+    const percent = Math.round(10000 * numBarTicks / numTicks) / 100;
+    const time = `<span class="time">(${percent}%, ${numBarTicks} samples)</span>`;
+    let content = names[level[j + 2]];
+    if (content[0] !== '(') content = content.replace(' ', ` ${time}<br><span class="path">`) + '</span>';
+    else content += ` ${time}`;
+
+    tooltipEl.innerHTML = content;
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.left = (Math.min(e.offsetX + 15 + tooltipEl.clientWidth, graphWidth) - tooltipEl.clientWidth) + 'px';
+    tooltipEl.style.top = (canvas.offsetTop + e.offsetY + 12) + 'px';
+}
+
+// (function frame() { if (levels) render(); requestAnimationFrame(frame); })();
+
+
+</script>
+</body>
+</html>
