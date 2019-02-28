@@ -1,0 +1,11 @@
+{
+  "name": "node-keep-alive-benchmark",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "<marcus@lob.com>",
+  "license": "MIT",
+  "dependencies": {
+    "agentkeepalive": "^4.0.2",
+    "bluebird": "^3.5.3"
+  }
+}
