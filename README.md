@@ -4,6 +4,10 @@ This repository contains benchmarks to compare the performance of outbound HTTP
 requests with non-reused connections (Node's default behavior) versus reusing
 connections with HTTP Keep-Alive.
 
+## Requirement
+
+Node.js version v10+
+
 ## Install Depedencies
 
 ```
